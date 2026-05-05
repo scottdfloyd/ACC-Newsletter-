@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+:root {
+  --background: #09090b;
+  --foreground: #fafafa;
+  --font-sans: var(--font-inter);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Newsletter body styles */
+.newsletter-body h2 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #E8C547;
+  margin-top: 1.75rem;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.newsletter-body p {
+  color: #d4d4d8;
+  line-height: 1.75;
+  margin-bottom: 1rem;
+}
+
+.newsletter-body strong {
+  color: #fafafa;
+  font-weight: 600;
+}
+
+.newsletter-body em {
+  color: #a1a1aa;
+}

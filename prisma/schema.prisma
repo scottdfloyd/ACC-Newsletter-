@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model BusinessUnit {
+  id              String   @id @default(cuid())
+  name            String
+  slug            String   @unique
+  linkedinHandle  String?
+  instagramHandle String?
+  createdAt       DateTime @default(now())
+  socialPosts     SocialPost[]
+}
+
+model SocialPost {
+  id             String       @id @default(cuid())
+  businessUnitId String
+  platform       String
+  content        String
+  imageUrl       String?
+  postUrl        String?
+  postedAt       DateTime
+  fetchedAt      DateTime     @default(now())
+  businessUnit   BusinessUnit @relation(fields: [businessUnitId], references: [id])
+}
+
+model MonthlyContent {
+  id            String   @id @default(cuid())
+  month         String
+  year          Int
+  talkingPoints String
+  links         String
+  imageUrls     String
+  uploadedAt    DateTime @default(now())
+  newsletters   Newsletter[]
+}
+
+model Newsletter {
+  id               String          @id @default(cuid())
+  monthlyContentId String?
+  month            String
+  year             Int
+  theme            String
+  subThemes        String
+  body             String
+  status           String          @default("draft")
+  createdAt        DateTime        @default(now())
+  publishedAt      DateTime?
+  framerPageUrl    String?
+  monthlyContent   MonthlyContent? @relation(fields: [monthlyContentId], references: [id])
+}
