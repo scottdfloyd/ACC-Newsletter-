@@ -2,16 +2,15 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 
 const BUSINESS_UNITS = [
-  { name: "HangarFour", slug: "hangarfour", instagramHandle: "hangarfour", linkedinHandle: "hangarfour" },
-  { name: "Pink Sparrow", slug: "pink-sparrow", instagramHandle: "pinksparrownyc", linkedinHandle: "pink-sparrow" },
-  { name: "Advisory", slug: "advisory", linkedinHandle: "acc-advisory" },
-  { name: "Speakeasy", slug: "speakeasy", instagramHandle: "speakeasypr", linkedinHandle: "speakeasy-pr" },
-  { name: "Cavalry", slug: "cavalry", instagramHandle: "cavalrymedia", linkedinHandle: "cavalry-media" },
-  { name: "AMP Agency", slug: "amp-agency", instagramHandle: "ampagency", linkedinHandle: "amp-agency" },
-  { name: "Goodway Group", slug: "goodway-group", linkedinHandle: "goodway-group" },
-  { name: "True Media", slug: "true-media", linkedinHandle: "true-media" },
-  { name: "Crossmedia", slug: "crossmedia", linkedinHandle: "crossmedia" },
-  { name: "Levelwing", slug: "levelwing", instagramHandle: "levelwing", linkedinHandle: "levelwing" },
+  { name: "ACC (Parent)", slug: "acc-parent", instagramHandle: "accelerationcc", linkedinHandle: "theacceleration", website: "accelerationcc.com" },
+  { name: "DKC", slug: "dkc", instagramHandle: "dkcnews", linkedinHandle: "dkc", website: "dkcnews.com" },
+  { name: "HangarFour", slug: "hangarfour", instagramHandle: "hangarfour", linkedinHandle: "hangarfour", website: "hangarfour.co" },
+  { name: "MKG", slug: "mkg", instagramHandle: "thisismkg", linkedinHandle: "thisismkg", website: "thisismkg.com" },
+  { name: "Pink Sparrow", slug: "pink-sparrow", instagramHandle: "pinksparrow_", linkedinHandle: "pink-sparrow-scenic", website: "pinksparrow.com" },
+  { name: "Pixly", slug: "pixly", instagramHandle: "pixly.tv", linkedinHandle: "pixly.tv", website: "pixly.tv" },
+  { name: "Trailblaze", slug: "trailblaze", instagramHandle: "trailblaze.co", linkedinHandle: "trailblazeco", website: "trailblaze.co" },
+  { name: "Ingenuity", slug: "ingenuity", linkedinHandle: "ingenuitygroupllc" },
+  { name: "PMK Entertainment", slug: "pmk-entertainment" },
 ];
 
 export async function POST() {
@@ -19,7 +18,7 @@ export async function POST() {
     for (const unit of BUSINESS_UNITS) {
       await prisma.businessUnit.upsert({
         where: { slug: unit.slug },
-        update: {},
+        update: { ...unit },
         create: unit,
       });
     }

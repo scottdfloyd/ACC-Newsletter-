@@ -13,6 +13,7 @@ model BusinessUnit {
   slug            String   @unique
   linkedinHandle  String?
   instagramHandle String?
+  website         String?
   createdAt       DateTime @default(now())
   socialPosts     SocialPost[]
 }
