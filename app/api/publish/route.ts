@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
-import { publishToFramer } from "@/lib/framer/publish";
 
 export async function POST(req: NextRequest) {
   const { newsletterId } = await req.json();
@@ -13,28 +12,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Newsletter not found" }, { status: 404 });
   }
 
-  const result = await publishToFramer({
-    title: `${newsletter.month} ${newsletter.year} — ${newsletter.theme}`,
-    theme: newsletter.theme,
-    subThemes: newsletter.subThemes,
-    body: newsletter.body,
-    month: newsletter.month,
-    year: newsletter.year,
-    publishedAt: new Date().toISOString(),
-  });
-
-  if (!result.success) {
-    return NextResponse.json({ error: result.error }, { status: 500 });
-  }
+  const slug = `${newsletter.month.toLowerCase()}-${newsletter.year}`;
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  const pageUrl = `${baseUrl}/newsletter/${slug}`;
 
   await prisma.newsletter.update({
     where: { id: newsletterId },
     data: {
       status: "published",
       publishedAt: new Date(),
-      framerPageUrl: result.pageUrl,
+      framerPageUrl: pageUrl,
     },
   });
 
-  return NextResponse.json({ success: true, pageUrl: result.pageUrl });
+  return NextResponse.json({ success: true, pageUrl });
 }
