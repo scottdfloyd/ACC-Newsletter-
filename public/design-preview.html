@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ACC Newsletter Studio — Design Preview</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #09090b; color: #fafafa; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; }
+
+  /* NAV */
+  .app { display: flex; min-height: 100vh; }
+  .sidebar { width: 220px; min-height: 100vh; background: #09090b; border-right: 1px solid #27272a; display: flex; flex-direction: column; flex-shrink: 0; }
+  .sidebar-logo { padding: 20px 16px 16px; border-bottom: 1px solid #27272a; display: flex; align-items: center; gap: 10px; }
+  .logo-mark { width: 28px; height: 28px; background: #E8C547; border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .logo-mark svg { width: 14px; height: 14px; color: #09090b; }
+  .logo-text { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #fafafa; line-height: 1.3; }
+  .sidebar-nav { padding: 12px 8px; flex: 1; }
+  .nav-label { font-size: 10px; color: #52525b; text-transform: uppercase; letter-spacing: 0.1em; padding: 8px 8px 6px; }
+  .nav-item { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 6px; cursor: pointer; color: #a1a1aa; font-size: 13px; transition: all 0.12s; margin-bottom: 1px; }
+  .nav-item:hover { background: #18181b; color: #fafafa; }
+  .nav-item.active { background: #18181b; color: #fafafa; }
+  .nav-item.active .nav-icon { color: #E8C547; }
+  .nav-icon { width: 15px; height: 15px; flex-shrink: 0; }
+  .sidebar-bottom { padding: 12px 8px; border-top: 1px solid #27272a; }
+
+  /* MAIN */
+  .main { flex: 1; overflow: auto; }
+  .page { display: none; padding: 32px 40px; max-width: 1000px; }
+  .page.active { display: block; }
+
+  /* HEADER */
+  .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid #27272a; }
+  .page-header h1 { font-size: 22px; font-weight: 700; color: #fafafa; }
+  .page-header p { color: #71717a; font-size: 13px; margin-top: 3px; }
+
+  /* BUTTONS */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: all 0.12s; }
+  .btn-primary { background: #E8C547; color: #09090b; }
+  .btn-primary:hover { background: #d4b23f; }
+  .btn-secondary { background: #27272a; color: #fafafa; border: 1px solid #3f3f46; }
+  .btn-secondary:hover { background: #3f3f46; }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+  .btn-lg { padding: 11px 20px; font-size: 14px; font-weight: 600; }
+
+  /* CARDS */
+  .card { background: #18181b; border: 1px solid #27272a; border-radius: 8px; }
+  .card-p { padding: 20px; }
+
+  /* STATS */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 32px; }
+  .stat-card { background: #18181b; border: 1px solid #27272a; border-radius: 8px; padding: 18px 20px; }
+  .stat-label { font-size: 10px; color: #52525b; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; }
+  .stat-value { font-size: 28px; font-weight: 700; color: #fafafa; }
+  .stat-sub { font-size: 11px; color: #52525b; margin-top: 3px; }
+
+  /* WORKFLOW */
+  .section-label { font-size: 10px; color: #71717a; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 14px; }
+  .workflow-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 32px; }
+  .workflow-card { background: #18181b; border: 1px solid #27272a; border-radius: 8px; padding: 18px; cursor: pointer; transition: all 0.12s; }
+  .workflow-card:hover { border-color: rgba(232,197,71,0.4); }
+  .wf-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+  .wf-step { font-size: 11px; font-family: monospace; color: #E8C547; }
+  .wf-icon { width: 32px; height: 32px; background: #27272a; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+  .wf-icon.done { background: rgba(232,197,71,0.15); }
+  .wf-icon svg { width: 15px; height: 15px; color: #71717a; }
+  .wf-icon.done svg { color: #E8C547; }
+  .wf-title { font-size: 13px; font-weight: 600; color: #fafafa; margin-bottom: 4px; }
+  .wf-desc { font-size: 12px; color: #71717a; line-height: 1.5; }
+  .wf-badge { display: inline-block; margin-top: 10px; font-size: 10px; color: #34d399; background: rgba(52,211,153,0.1); padding: 2px 8px; border-radius: 100px; }
+  .arrow-icon { width: 14px; height: 14px; color: #3f3f46; }
+
+  /* RECENT */
+  .newsletter-row { display: flex; align-items: center; justify-content: space-between; background: #18181b; border: 1px solid #27272a; border-radius: 8px; padding: 14px 20px; margin-bottom: 6px; cursor: pointer; transition: border-color 0.12s; }
+  .newsletter-row:hover { border-color: #3f3f46; }
+  .nr-title { font-size: 13px; font-weight: 500; color: #fafafa; }
+  .nr-sub { font-size: 11px; color: #52525b; margin-top: 2px; }
+  .badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 100px; }
+  .badge-published { background: rgba(52,211,153,0.15); color: #34d399; }
+  .badge-draft { background: #27272a; color: #a1a1aa; }
+  .badge-gold { background: rgba(232,197,71,0.1); border: 1px solid rgba(232,197,71,0.2); color: #E8C547; }
+
+  /* FEEDS */
+  .filter-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+  .filter-tabs { display: flex; background: #18181b; border: 1px solid #27272a; border-radius: 6px; padding: 2px; }
+  .filter-tab { padding: 5px 12px; border-radius: 4px; font-size: 11px; font-weight: 500; cursor: pointer; color: #71717a; text-transform: capitalize; }
+  .filter-tab.active { background: #E8C547; color: #09090b; }
+  .filter-select { background: #18181b; border: 1px solid #27272a; color: #a1a1aa; border-radius: 6px; padding: 6px 12px; font-size: 11px; }
+  .filter-count { font-size: 11px; color: #52525b; }
+  .feeds-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .feed-card { background: #18181b; border: 1px solid #27272a; border-radius: 8px; padding: 16px; }
+  .feed-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .feed-unit { font-size: 11px; font-weight: 600; color: #fafafa; }
+  .feed-platform { font-size: 10px; padding: 2px 7px; border-radius: 100px; }
+  .platform-li { background: rgba(10,102,194,0.15); color: #60a5fa; }
+  .platform-ig { background: rgba(225,48,108,0.15); color: #f472b6; }
+  .feed-content { font-size: 12px; color: #a1a1aa; line-height: 1.6; margin-bottom: 10px; }
+  .feed-footer { display: flex; align-items: center; justify-content: space-between; }
+  .feed-date { font-size: 10px; color: #52525b; }
+  .feed-link { font-size: 10px; color: #E8C547; }
+
+  /* GENERATE */
+  .gen-form { max-width: 600px; }
+  .form-section { margin-bottom: 28px; }
+  .form-label { display: block; font-size: 10px; color: #71717a; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
+  .form-hint { font-size: 11px; color: #52525b; margin-bottom: 10px; }
+  .option-btn { width: 100%; text-align: left; background: #18181b; border: 1px solid #27272a; border-radius: 8px; padding: 12px 16px; margin-bottom: 6px; cursor: pointer; transition: all 0.12s; display: flex; align-items: center; justify-content: space-between; }
+  .option-btn:hover { border-color: #3f3f46; }
+  .option-btn.selected { border-color: #E8C547; background: rgba(232,197,71,0.05); }
+  .option-text { font-size: 13px; color: #fafafa; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #E8C547; flex-shrink: 0; }
+  .synthesis-card { background: #18181b; border: 1px solid #27272a; border-radius: 8px; padding: 16px; }
+  .synthesis-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 13px; color: #d4d4d8; }
+  .synthesis-row:last-child { margin-bottom: 0; }
+  .chevron { width: 13px; height: 13px; color: #E8C547; }
+  .gen-footer { display: flex; flex-direction: column; gap: 8px; padding-top: 8px; }
+  .gen-hint { font-size: 11px; color: #52525b; text-align: center; }
+
+  /* NEWSLETTER DETAIL */
+  .detail-nav { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #71717a; margin-bottom: 16px; cursor: pointer; }
+  .detail-nav:hover { color: #a1a1aa; }
+  .tab-bar { display: flex; gap: 2px; background: #18181b; border: 1px solid #27272a; border-radius: 6px; padding: 2px; width: fit-content; margin-bottom: 16px; }
+  .tab { padding: 5px 16px; border-radius: 4px; font-size: 11px; font-weight: 500; cursor: pointer; color: #71717a; text-transform: capitalize; }
+  .tab.active { background: #E8C547; color: #09090b; }
+  .preview-area { background: #18181b; border: 1px solid #27272a; border-radius: 8px; padding: 32px; max-width: 700px; }
+  .nl-body h2 { font-size: 11px; font-weight: 700; color: #E8C547; text-transform: uppercase; letter-spacing: 0.1em; margin: 28px 0 10px; padding-top: 6px; border-top: 1px solid #27272a; }
+  .nl-body h2:first-child { margin-top: 0; border-top: none; padding-top: 0; }
+  .nl-body p { color: #a1a1aa; line-height: 1.85; margin-bottom: 14px; font-size: 15px; }
+  .nl-body strong { color: #fafafa; font-weight: 600; }
+  .header-actions { display: flex; align-items: center; gap: 8px; }
+  .theme-input { width: 100%; background: #18181b; border: 1px solid #3f3f46; color: #fafafa; border-radius: 6px; padding: 10px 14px; font-size: 17px; font-weight: 600; margin-bottom: 14px; outline: none; }
+  .subtheme-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+  .subtheme-label { font-size: 11px; color: #52525b; }
+
+  /* PUBLIC NEWSLETTER */
+  .pub-page { display: none; min-height: 100vh; background: #09090b; }
+  .pub-page.active { display: block; }
+  .pub-header { border-bottom: 1px solid #27272a; padding: 18px 40px; display: flex; align-items: center; justify-content: space-between; }
+  .pub-logo { display: flex; align-items: center; gap: 10px; }
+  .pub-hero { background: rgba(24,24,27,0.6); border-bottom: 1px solid #27272a; padding: 48px 40px; }
+  .pub-hero-inner { max-width: 700px; margin: 0 auto; }
+  .pub-eyebrow { font-size: 11px; font-weight: 600; color: #E8C547; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 14px; }
+  .pub-title { font-size: 36px; font-weight: 800; color: #fafafa; line-height: 1.15; margin-bottom: 20px; }
+  .pub-body { max-width: 700px; margin: 0 auto; padding: 40px; }
+  .pub-footer { border-top: 1px solid #27272a; padding: 28px 40px; }
+  .pub-footer-inner { max-width: 700px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; }
+  .pub-footer-copy { font-size: 11px; color: #3f3f46; margin-top: 16px; padding-top: 16px; border-top: 1px solid #18181b; max-width: 700px; margin-left: auto; margin-right: auto; }
+
+  /* NOTICE BANNER */
+  .notice { background: rgba(232,197,71,0.05); border: 1px solid rgba(232,197,71,0.2); border-radius: 8px; padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 10px; font-size: 12px; color: #a1a1aa; }
+  .notice strong { color: #E8C547; }
+
+  /* PAGE SWITCHER */
+  .page-switcher { position: fixed; bottom: 20px; right: 20px; background: #18181b; border: 1px solid #27272a; border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 4px; z-index: 999; box-shadow: 0 8px 32px rgba(0,0,0,0.6); }
+  .ps-label { font-size: 9px; color: #52525b; text-transform: uppercase; letter-spacing: 0.1em; padding: 0 6px 4px; border-bottom: 1px solid #27272a; margin-bottom: 2px; }
+  .ps-btn { padding: 6px 12px; border-radius: 6px; font-size: 11px; cursor: pointer; color: #71717a; background: transparent; border: none; text-align: left; transition: all 0.1s; white-space: nowrap; }
+  .ps-btn:hover { background: #27272a; color: #fafafa; }
+  .ps-btn.active { background: rgba(232,197,71,0.1); color: #E8C547; }
+</style>
+</head>
+<body>
+
+<!-- PAGE SWITCHER -->
+<div class="page-switcher">
+  <div class="ps-label">Preview Pages</div>
+  <button class="ps-btn active" onclick="showPage('dashboard')">Dashboard</button>
+  <button class="ps-btn" onclick="showPage('feeds')">Social Feeds</button>
+  <button class="ps-btn" onclick="showPage('upload')">Upload Content</button>
+  <button class="ps-btn" onclick="showPage('generate')">Generate</button>
+  <button class="ps-btn" onclick="showPage('newsletter-detail')">Newsletter Editor</button>
+  <button class="ps-btn" onclick="showPage('newsletter-public')">Public View</button>
+</div>
+
+<!-- ===================== DASHBOARD LAYOUT ===================== -->
+<div id="page-dashboard" class="page active">
+<div class="app">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      </div>
+      <span class="logo-text">ACC<br>Newsletter<br>Studio</span>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-label">Workspace</div>
+      <div class="nav-item active" onclick="showPage('dashboard')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </div>
+      <div class="nav-item" onclick="showPage('upload')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Upload Content
+      </div>
+      <div class="nav-item" onclick="showPage('feeds')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>
+        Social Feeds
+      </div>
+      <div class="nav-item" onclick="showPage('generate')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        Generate
+      </div>
+      <div class="nav-item" onclick="showPage('newsletter-detail')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Newsletters
+      </div>
+      <div class="nav-label" style="margin-top:12px">System</div>
+      <div class="nav-item">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+        Settings
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main">
+    <div style="padding: 32px 40px; max-width: 900px;">
+      <div class="page-header">
+        <div>
+          <h1>Newsletter Studio</h1>
+          <p>May 2026 · Acceleration Community of Companies</p>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Business Units</div>
+          <div class="stat-value">10</div>
+          <div class="stat-sub">across ACC</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Social Posts</div>
+          <div class="stat-value">22</div>
+          <div class="stat-sub">this period</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Drafts</div>
+          <div class="stat-value">1</div>
+          <div class="stat-sub">in progress</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Published</div>
+          <div class="stat-value">0</div>
+          <div class="stat-sub">newsletters</div>
+        </div>
+      </div>
+
+      <!-- Workflow -->
+      <div class="section-label">Monthly Workflow</div>
+      <div class="workflow-grid">
+        <div class="workflow-card" onclick="showPage('upload')">
+          <div class="wf-top">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span class="wf-step">01</span>
+              <div class="wf-icon done">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              </div>
+            </div>
+            <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </div>
+          <div class="wf-title">Upload Content</div>
+          <div class="wf-desc">Add this month's talking points, links, and images</div>
+          <span class="wf-badge">Complete</span>
+        </div>
+        <div class="workflow-card" onclick="showPage('feeds')">
+          <div class="wf-top">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span class="wf-step">02</span>
+              <div class="wf-icon done">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>
+              </div>
+            </div>
+            <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </div>
+          <div class="wf-title">Review Social Feeds</div>
+          <div class="wf-desc">See what your business units have been posting</div>
+          <span class="wf-badge">Complete</span>
+        </div>
+        <div class="workflow-card" onclick="showPage('generate')">
+          <div class="wf-top">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span class="wf-step">03</span>
+              <div class="wf-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+              </div>
+            </div>
+            <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </div>
+          <div class="wf-title">Generate Newsletter</div>
+          <div class="wf-desc">AI synthesizes everything into a themed newsletter</div>
+        </div>
+        <div class="workflow-card" onclick="showPage('newsletter-detail')">
+          <div class="wf-top">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span class="wf-step">04</span>
+              <div class="wf-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+            </div>
+            <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </div>
+          <div class="wf-title">Review &amp; Publish</div>
+          <div class="wf-desc">Edit the draft and publish to your Framer site</div>
+        </div>
+      </div>
+
+      <!-- Recent -->
+      <div class="section-label">Recent Newsletters</div>
+      <div class="newsletter-row" onclick="showPage('newsletter-detail')">
+        <div>
+          <div class="nr-title">ACC at the Center of Culture</div>
+          <div class="nr-sub">May 2026</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="badge badge-draft">draft</span>
+          <svg style="width:14px;height:14px;color:#52525b" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ===================== SOCIAL FEEDS ===================== -->
+<div id="page-feeds" class="page">
+<div class="app">
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+      <span class="logo-text">ACC<br>Newsletter<br>Studio</span>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-label">Workspace</div>
+      <div class="nav-item" onclick="showPage('dashboard')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard</div>
+      <div class="nav-item" onclick="showPage('upload')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Upload Content</div>
+      <div class="nav-item active"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>Social Feeds</div>
+      <div class="nav-item" onclick="showPage('generate')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>Generate</div>
+      <div class="nav-item" onclick="showPage('newsletter-detail')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Newsletters</div>
+    </div>
+  </div>
+  <div class="main">
+    <div style="padding:32px 40px;max-width:900px">
+      <div class="page-header"><div><h1>Social Feeds</h1><p>Posts from ACC business units — the raw material for your newsletter.</p></div></div>
+      <div class="notice"><span>⚡</span><div><strong>Mock data active.</strong> Add your business unit LinkedIn and Instagram handles in Settings to connect live social feeds via Apify.</div></div>
+      <div class="filter-bar">
+        <div class="filter-tabs">
+          <span class="filter-tab active">all</span>
+          <span class="filter-tab">linkedin</span>
+          <span class="filter-tab">instagram</span>
+        </div>
+        <select class="filter-select"><option>All Business Units</option><option>ACC (Parent)</option><option>DKC</option><option>HangarFour</option><option>MKG</option><option>Pink Sparrow</option><option>Pixly</option><option>PMK Entertainment</option><option>Trailblaze</option></select>
+        <span class="filter-count">22 posts</span>
+      </div>
+      <div class="feeds-grid">
+        <div class="feed-card">
+          <div class="feed-header"><span class="feed-unit">MKG</span><span class="feed-platform platform-ig">instagram</span></div>
+          <div class="feed-content">We brought Casa Cheirosa to life at Coachella for Sol de Janeiro — the first-ever fragrance-focused activation in the festival's history. Scent, sound, and self-expression collided. BizBash named it one of the most talked-about brand moments of Coachella 2026. 🌸</div>
+          <div class="feed-footer"><span class="feed-date">Apr 15, 2026</span><span class="feed-link">View post →</span></div>
+        </div>
+        <div class="feed-card">
+          <div class="feed-header"><span class="feed-unit">HangarFour</span><span class="feed-platform platform-ig">instagram</span></div>
+          <div class="feed-content">JeuveauFest at Coachella — a full brand takeover of the ARRIVE hotel. 150+ creators, 2M+ social impressions, content performing 6x above benchmark engagement. BizBash's most talked-about Coachella brand moment. 💉✨</div>
+          <div class="feed-footer"><span class="feed-date">Apr 14, 2026</span><span class="feed-link">View post →</span></div>
+        </div>
+        <div class="feed-card">
+          <div class="feed-header"><span class="feed-unit">Pink Sparrow</span><span class="feed-platform platform-ig">instagram</span></div>
+          <div class="feed-content">Proud to have partnered with MKG on the Ed Sheeran x Atlantic Records Old Phone Pub — built from the ground up in Ipswich, MA then transformed into a speakeasy at Coachella. Ed played a surprise set inside. 🎸</div>
+          <div class="feed-footer"><span class="feed-date">Apr 20, 2026</span><span class="feed-link">View post →</span></div>
+        </div>
+        <div class="feed-card">
+          <div class="feed-header"><span class="feed-unit">PMK Entertainment</span><span class="feed-platform platform-li">linkedin</span></div>
+          <div class="feed-content">PMK Entertainment wrapped a landmark week at PaleyFest LA — The Pitt, Emily in Paris, Nobody Wants This, Shrinking, Charlie's Angels 50th anniversary. Special moment: Michael J. Fox surprise appearance. TODAY Show, USA Today, People, Variety coverage secured.</div>
+          <div class="feed-footer"><span class="feed-date">Apr 5, 2026</span><span class="feed-link">View post →</span></div>
+        </div>
+        <div class="feed-card">
+          <div class="feed-header"><span class="feed-unit">DKC</span><span class="feed-platform platform-ig">instagram</span></div>
+          <div class="feed-content">Babs Costello — NYT bestselling author and America's Favorite Grandma — just landed a morning show trifecta for her debut children's book. Good Morning America, Tamron Hall, and TODAY Show all in one week. 📺</div>
+          <div class="feed-footer"><span class="feed-date">Apr 7, 2026</span><span class="feed-link">View post →</span></div>
+        </div>
+        <div class="feed-card">
+          <div class="feed-header"><span class="feed-unit">ACC (Parent)</span><span class="feed-platform platform-li">linkedin</span></div>
+          <div class="feed-content">ACC had a significant presence at POSSIBLE this week. Michael Nyman interviewed at Speaker's Corner for NYSE-TV. Scott Floyd interviewed for The Ad Podcast. Michael spoke on 'Community is the New Channel' panel.</div>
+          <div class="feed-footer"><span class="feed-date">Apr 22, 2026</span><span class="feed-link">View post →</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ===================== UPLOAD ===================== -->
+<div id="page-upload" class="page">
+<div class="app">
+  <div class="sidebar">
+    <div class="sidebar-logo"><div class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div><span class="logo-text">ACC<br>Newsletter<br>Studio</span></div>
+    <div class="sidebar-nav">
+      <div class="nav-label">Workspace</div>
+      <div class="nav-item" onclick="showPage('dashboard')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard</div>
+      <div class="nav-item active"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Upload Content</div>
+      <div class="nav-item" onclick="showPage('feeds')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>Social Feeds</div>
+      <div class="nav-item" onclick="showPage('generate')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>Generate</div>
+      <div class="nav-item" onclick="showPage('newsletter-detail')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Newsletters</div>
+    </div>
+  </div>
+  <div class="main">
+    <div style="padding:32px 40px;max-width:700px">
+      <div class="page-header"><div><h1>Upload Monthly Content</h1><p>Add leadership talking points, links, and context for this month's newsletter.</p></div></div>
+      <div style="display:flex;gap:10px;margin-bottom:28px">
+        <select style="background:#18181b;border:1px solid #3f3f46;color:#fafafa;border-radius:6px;padding:8px 12px;font-size:13px"><option>May</option></select>
+        <select style="background:#18181b;border:1px solid #3f3f46;color:#fafafa;border-radius:6px;padding:8px 12px;font-size:13px"><option>2026</option></select>
+      </div>
+      <div style="margin-bottom:24px">
+        <label class="form-label">Leadership Talking Points</label>
+        <p class="form-hint">Key messages, highlights, announcements, or themes you want the newsletter to emphasize.</p>
+        <textarea rows="7" style="width:100%;background:#18181b;border:1px solid #3f3f46;color:#a1a1aa;border-radius:8px;padding:14px 16px;font-size:13px;resize:none;outline:none;line-height:1.7">• Coachella 2026 was our biggest brand activation footprint ever
+• Super Bowl LX delivered record results for Pepsi and bubly
+• PaleyFest LA solidified PMK Entertainment as the go-to entertainment PR firm
+• ACC Advisory's presence at POSSIBLE reinforced our industry leadership position
+• Cross-agency collaboration is at an all-time high — Ed Sheeran pub is the perfect example</textarea>
+      </div>
+      <div style="margin-bottom:28px">
+        <label class="form-label">Reference Links</label>
+        <p class="form-hint">Case studies, press coverage, campaign recaps, or anything else to include.</p>
+        <div style="display:flex;gap:8px;margin-bottom:8px"><input type="url" value="https://bizbash.com/coachella-2026-best-activations" style="flex:1;background:#18181b;border:1px solid #3f3f46;color:#a1a1aa;border-radius:6px;padding:8px 12px;font-size:12px;outline:none"/></div>
+        <div style="display:flex;gap:8px;margin-bottom:8px"><input type="url" placeholder="https://..." style="flex:1;background:#18181b;border:1px solid #3f3f46;color:#52525b;border-radius:6px;padding:8px 12px;font-size:12px;outline:none"/></div>
+        <button style="background:transparent;border:none;color:#52525b;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:4px;padding:0">+ Add another link</button>
+      </div>
+      <button class="btn btn-primary btn-lg">Save Monthly Content</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ===================== GENERATE ===================== -->
+<div id="page-generate" class="page">
+<div class="app">
+  <div class="sidebar">
+    <div class="sidebar-logo"><div class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div><span class="logo-text">ACC<br>Newsletter<br>Studio</span></div>
+    <div class="sidebar-nav">
+      <div class="nav-label">Workspace</div>
+      <div class="nav-item" onclick="showPage('dashboard')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard</div>
+      <div class="nav-item" onclick="showPage('upload')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Upload Content</div>
+      <div class="nav-item" onclick="showPage('feeds')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>Social Feeds</div>
+      <div class="nav-item active"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>Generate</div>
+      <div class="nav-item" onclick="showPage('newsletter-detail')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Newsletters</div>
+    </div>
+  </div>
+  <div class="main">
+    <div style="padding:32px 40px;max-width:700px">
+      <div class="page-header"><div><h1>Generate Newsletter</h1><p>AI synthesizes your content and social feeds into a themed newsletter.</p></div></div>
+      <div class="gen-form">
+        <div class="form-section">
+          <label class="form-label">Monthly Content Source</label>
+          <div class="option-btn selected">
+            <div><div style="font-size:13px;font-weight:600;color:#fafafa">May 2026</div><div style="font-size:11px;color:#52525b;margin-top:2px">Coachella 2026 was our biggest brand activation footprint ever…</div></div>
+            <div class="dot"></div>
+          </div>
+        </div>
+        <div class="form-section">
+          <label class="form-label">Newsletter Theme</label>
+          <p class="form-hint">Choose a cultural angle or let AI detect the strongest theme from this month's content.</p>
+          <div class="option-btn"><span class="option-text">Awards Season: ACC Owns the Moment</span></div>
+          <div class="option-btn selected"><span class="option-text">Let AI pick the best theme</span><div class="dot"></div></div>
+          <div class="option-btn"><span class="option-text">Super Bowl: Where Brands Become Culture</span></div>
+          <div class="option-btn"><span class="option-text">The Power of Experiential</span></div>
+          <div style="margin-top:8px"><input type="text" placeholder="Or type your own theme..." style="width:100%;background:#18181b;border:1px solid #3f3f46;color:#fafafa;border-radius:6px;padding:9px 14px;font-size:13px;outline:none"/></div>
+        </div>
+        <div class="form-section">
+          <div class="synthesis-card">
+            <p style="font-size:10px;color:#71717a;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px">What AI will synthesize</p>
+            <div class="synthesis-row"><svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>22 social posts from 8 business units</div>
+            <div class="synthesis-row"><svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>Leadership talking points + links</div>
+            <div class="synthesis-row"><svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>Cultural moment detection (Coachella, Super Bowl, PaleyFest)</div>
+            <div class="synthesis-row"><svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>~1,200-word newsletter in ACC editorial voice</div>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-lg" style="width:100%" onclick="showPage('newsletter-detail')">
+          <svg style="width:15px;height:15px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          Generate Newsletter
+        </button>
+        <p class="gen-hint">Claude synthesizes your content — takes about 15–20 seconds.</p>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ===================== NEWSLETTER DETAIL ===================== -->
+<div id="page-newsletter-detail" class="page">
+<div class="app">
+  <div class="sidebar">
+    <div class="sidebar-logo"><div class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div><span class="logo-text">ACC<br>Newsletter<br>Studio</span></div>
+    <div class="sidebar-nav">
+      <div class="nav-label">Workspace</div>
+      <div class="nav-item" onclick="showPage('dashboard')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard</div>
+      <div class="nav-item" onclick="showPage('upload')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Upload Content</div>
+      <div class="nav-item" onclick="showPage('feeds')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>Social Feeds</div>
+      <div class="nav-item" onclick="showPage('generate')"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>Generate</div>
+      <div class="nav-item active"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Newsletters</div>
+    </div>
+  </div>
+  <div class="main">
+    <div style="padding:32px 40px;max-width:860px">
+      <div class="detail-nav" onclick="showPage('dashboard')">
+        <svg style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        All Newsletters
+      </div>
+      <div class="page-header">
+        <div><h1>ACC at the Center of Culture</h1><p>May 2026</p></div>
+        <div class="header-actions">
+          <span class="badge badge-draft">draft</span>
+          <button class="btn btn-secondary btn-sm">
+            <svg style="width:13px;height:13px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13"/><polyline points="7 3 7 8 15 8"/></svg>
+            Save
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="showPage('newsletter-public')">
+            <svg style="width:13px;height:13px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            Publish
+          </button>
+        </div>
+      </div>
+      <div class="subtheme-row">
+        <span class="subtheme-label">Sub-themes:</span>
+        <span class="badge badge-gold">Where Culture Happens, We Show Up</span>
+        <span class="badge badge-gold">Cross-Agency Collaboration</span>
+        <span class="badge badge-gold">Creating Culture, Not Just Capturing It</span>
+      </div>
+      <input class="theme-input" value="ACC at the Center of Culture" />
+      <div class="tab-bar">
+        <span class="tab active">preview</span>
+        <span class="tab">edit</span>
+      </div>
+      <div class="preview-area">
+        <div class="nl-body">
+          <h2>We're Back — And We're at the Center of Everything</h2>
+          <p>Hello, ACC family. After a brief hiatus, the Global Newsletter is <strong>BACK</strong> — and what a return it is. Because over the past quarter, the ACC community didn't just show up to culture. We <strong>created it</strong>. From Super Bowl LX to Coachella. From PaleyFest to <em>The Devil Wears Prada 2</em>. Wherever the conversation was happening, our community of 650+ marketing professionals was in the room — and most of the time, we were the ones running it.</p>
+          <p>Cross-agency collaborations are at an all-time high. New business is flowing. Our executive voices are echoing across every major industry stage. Be <strong>PROUD</strong> of this work. Spread the word. Let's go.</p>
+          <h2>Coachella Was Our Stage</h2>
+          <p>When it comes to Coachella 2026, the ACC family didn't just attend — we <strong>BUILT</strong> it. MKG and Pink Sparrow constructed Ed Sheeran's Old Phone Pub from the ground up in Ipswich, MA, then shipped it to the desert where Ed played a surprise set alongside Shaboozey and Alex Warren. The crowd lost their minds. We lost ours too — in the best possible way.</p>
+          <p>Meanwhile, MKG delivered Sol de Janeiro's Casa Cheirosa — the <strong>first fragrance activation in Coachella's history</strong> — and walked away with the Gold Award for Best Festival Activation from Event Marketer. HangarFour took the full ARRIVE Hotel for JeuveauFest: 150+ creators, 2M+ impressions, content running 6x above benchmark. That's not just a win. That's the ACC standard.</p>
+          <h2>Super Bowl LX: We Were the Noise</h2>
+          <p>At Super Bowl LX in San Francisco, the ACC community showed up everywhere. ACC brought Martha Stewart and seven local restaurants to Yerba Buena Gardens for Pepsi's Bay Area Local Eats — exceeding 2025 results. MKG transformed SF Brewing Co. into an immersive BÉIS takeover. ACC + DKC drove mass awareness for bubly's Nintendo/Illumination collab, landing USA Today and Access Daily coverage. This is what full-service looks like.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ===================== PUBLIC NEWSLETTER ===================== -->
+<div id="page-newsletter-public" class="pub-page">
+  <div class="pub-header">
+    <div class="pub-logo">
+      <div class="logo-mark" style="width:28px;height:28px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+      <span style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#fafafa">Acceleration Community of Companies</span>
+    </div>
+    <span style="font-size:11px;color:#52525b;text-transform:uppercase;letter-spacing:0.1em">May 2026</span>
+  </div>
+  <div class="pub-hero">
+    <div class="pub-hero-inner">
+      <p class="pub-eyebrow">Monthly Newsletter · May 2026</p>
+      <h1 class="pub-title">ACC at the Center of Culture</h1>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <span class="badge badge-gold" style="font-size:12px;padding:5px 14px">Where Culture Happens, We Show Up</span>
+        <span class="badge badge-gold" style="font-size:12px;padding:5px 14px">Cross-Agency Collaboration</span>
+        <span class="badge badge-gold" style="font-size:12px;padding:5px 14px">Creating Culture, Not Just Capturing It</span>
+      </div>
+    </div>
+  </div>
+  <div class="pub-body">
+    <div class="nl-body">
+      <p>Hello, ACC family. After a brief hiatus, the Global Newsletter is <strong>BACK</strong> — and what a return it is. Because over the past quarter, the ACC community didn't just show up to culture. We <strong>created it</strong>. From Super Bowl LX to Coachella. From PaleyFest to <em>The Devil Wears Prada 2</em>. From the Grammys stage to the boardrooms of POSSIBLE. Wherever the conversation was happening, our community of 650+ marketing professionals was in the room — and most of the time, we were the ones running it.</p>
+      <p>Cross-agency collaborations are at an all-time high. New business is flowing. Our executive voices are echoing across every major industry stage. PMK Entertainment is hitting the ground running. Be <strong>PROUD</strong> of this work. Spread the word. Let's go.</p>
+      <h2>Coachella Was Our Stage</h2>
+      <p>When it comes to Coachella 2026, the ACC family didn't just attend — we <strong>BUILT</strong> it. MKG and Pink Sparrow constructed the Ed Sheeran x Atlantic Records Old Phone Pub from scratch in Ipswich, MA, then shipped it to the desert, where Ed played a surprise set alongside Shaboozey and Alex Warren. HangarFour took the full ARRIVE Hotel for JeuveauFest: 150+ creators, 2M+ impressions, content 6x above benchmark. MKG's Sol de Janeiro Casa Cheirosa was the <strong>first-ever fragrance activation in Coachella history</strong> — and took Gold at Event Marketer.</p>
+      <h2>Super Bowl LX: We Were the Noise</h2>
+      <p>At Super Bowl LX in the Bay Area, ACC showed up everywhere. Martha Stewart, seven local restaurants, Yerba Buena Gardens — Pepsi's Local Eats exceeded 2025 results. MKG turned SF Brewing Co. into an immersive BÉIS takeover. ACC + DKC drove awareness for bubly x Nintendo's galaxy-inspired collab. USA Today, Access Daily, and more. <strong>This</strong> is what full-service looks like.</p>
+      <h2>Entertainment Marketing: The ACC Standard</h2>
+      <p>HangarFour's brand integration portfolio this quarter was <strong>stunning</strong>: Grey Goose fronted by Heidi Klum in <em>The Devil Wears Prada 2</em>. Dos Equis with Jon Hamm in <em>Your Friends & Neighbors</em>. Bohemia with Paul Rudd and Jack Black in <em>Anaconda</em>. PMK Entertainment wrapped PaleyFest LA at the Dolby Theatre with a Michael J. Fox surprise appearance. Press? TODAY Show, USA Today, People, Variety. That's the ACC standard.</p>
+      <h2>Industry Voices: ACC at POSSIBLE</h2>
+      <p>At the POSSIBLE conference, ACC's voice was in every major room. Michael Nyman sat down for NYSE-TV's Speaker's Corner interview and led the "Community is the New Channel" panel — featured in The Drum by EIC Gordon Young. Scott Floyd joined The Ad Podcast and the "Big Game" panel. Our presence at ADWEEK House, Female Quotient, and Unplugged Collective Supper Club made clear: <strong>ACC leads the industry conversation</strong>.</p>
+    </div>
+  </div>
+  <div class="pub-footer">
+    <div class="pub-footer-inner">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <div class="logo-mark" style="width:22px;height:22px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+          <span style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase">ACC</span>
+        </div>
+        <p style="font-size:12px;color:#52525b;max-width:280px;line-height:1.6">Acceleration Community of Companies — a community of ~650 marketing professionals across 10 business units.</p>
+      </div>
+      <p style="font-size:11px;color:#3f3f46">Published May 7, 2026</p>
+    </div>
+    <p class="pub-footer-copy">© 2026 Acceleration Community of Companies. Internal newsletter for ACC members.</p>
+  </div>
+  <div style="position:fixed;bottom:80px;right:20px">
+    <button class="btn btn-secondary btn-sm" onclick="showPage('newsletter-detail')">← Back to Editor</button>
+  </div>
+</div>
+
+<script>
+function showPage(name) {
+  // Hide all dashboard pages
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  // Hide public page
+  document.querySelectorAll('.pub-page').forEach(p => p.classList.remove('active'));
+  // Show target
+  const target = document.getElementById('page-' + name);
+  if (target) target.classList.add('active');
+  // Update switcher
+  document.querySelectorAll('.ps-btn').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('onclick').includes(name));
+  });
+}
+</script>
+</body>
+</html>
