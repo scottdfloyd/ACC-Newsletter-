@@ -7,12 +7,14 @@ import type { SocialPost } from "@/lib/social/mock-feeds";
 const PLATFORMS = ["all", "linkedin", "instagram"] as const;
 const BUSINESS_UNITS = [
   "all",
+  "ACC (Parent)",
+  "DKC",
   "HangarFour",
+  "MKG",
   "Pink Sparrow",
-  "Advisory",
-  "Speakeasy",
-  "Cavalry",
-  "AMP Agency",
+  "Pixly",
+  "PMK Entertainment",
+  "Trailblaze",
 ];
 
 export default function FeedsPage() {
