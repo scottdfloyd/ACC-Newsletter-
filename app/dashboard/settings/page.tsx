@@ -123,7 +123,7 @@ export default function SettingsPage() {
                 placeholder="apify_api_..."
                 className="flex-1 bg-muted border border-border rounded px-3 py-2 text-sm font-mono"
               />
-              <Button onClick={saveApifyKey} variant="outline" size="sm">
+              <Button onClick={saveApifyKey} variant="secondary" size="sm">
                 {apifySaved ? (
                   <span className="flex items-center gap-1">
                     <CheckCircle className="w-4 h-4 text-green-500" /> Saved
