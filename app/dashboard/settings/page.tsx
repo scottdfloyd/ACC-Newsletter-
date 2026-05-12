@@ -54,7 +54,7 @@ export default function SettingsPage() {
     <div className="flex-1 overflow-auto">
       <Header
         title="Settings"
-        description="Configure business unit social handles and API integrations."
+        
       />
       <div className="p-6 max-w-4xl space-y-8">
 
