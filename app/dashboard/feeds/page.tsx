@@ -1,9 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 
 interface SocialPost {
   id: string;
@@ -71,17 +68,17 @@ export default function SocialFeedsPage() {
           <h1 className="text-2xl font-bold text-white">Social Feeds</h1>
           <p className="text-gray-400 mt-1">Latest posts from all ACC business units</p>
         </div>
-        <Button
+        <button
           onClick={triggerScrape}
           disabled={scraping}
-          className="bg-amber-600 hover:bg-amber-700 text-white"
+          className="px-4 py-2 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
         >
           {scraping ? 'Scraping...' : 'Refresh Social Feeds'}
-        </Button>
+        </button>
       </div>
 
       {message && (
-        <div className="mb-4 p-3 rounded bg-gray-800 text-gray-200 text-sm">
+        <div className="mb-4 p-3 rounded-lg bg-gray-800 text-gray-200 text-sm">
           {message}
         </div>
       )}
@@ -110,20 +107,20 @@ export default function SocialFeedsPage() {
           <p className="text-gray-500 text-sm mb-6">
             Click "Refresh Social Feeds" to pull the latest posts from all ACC units.
           </p>
-          <Button
+          <button
             onClick={triggerScrape}
             disabled={scraping}
-            className="bg-amber-600 hover:bg-amber-700 text-white"
+            className="px-4 py-2 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
           >
             {scraping ? 'Scraping...' : 'Pull Social Feeds Now'}
-          </Button>
+          </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map(post => (
-            <Card key={post.id} className="bg-gray-900 border-gray-800">
+            <div key={post.id} className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
               {post.imageUrl && (
-                <div className="aspect-video w-full overflow-hidden rounded-t-lg">
+                <div className="aspect-video w-full overflow-hidden">
                   <img
                     src={post.imageUrl}
                     alt=""
@@ -131,28 +128,22 @@ export default function SocialFeedsPage() {
                   />
                 </div>
               )}
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-sm font-semibold text-white">
-                    {post.businessUnit.name}
-                  </CardTitle>
-                  <Badge
-                    className={
-                      post.platform === 'instagram'
-                        ? 'bg-pink-900 text-pink-300'
-                        : 'bg-blue-900 text-blue-300'
-                    }
-                  >
+              <div className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-semibold text-white">{post.businessUnit.name}</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                    post.platform === 'instagram'
+                      ? 'bg-pink-900/50 text-pink-300'
+                      : 'bg-blue-900/50 text-blue-300'
+                  }`}>
                     {post.platform}
-                  </Badge>
+                  </span>
                 </div>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-500 mb-2">
                   {new Date(post.publishedAt).toLocaleDateString('en-US', {
                     month: 'short', day: 'numeric', year: 'numeric'
                   })}
                 </p>
-              </CardHeader>
-              <CardContent>
                 <p className="text-gray-300 text-sm line-clamp-4 mb-3">
                   {post.caption || 'No caption'}
                 </p>
@@ -167,8 +158,8 @@ export default function SocialFeedsPage() {
                     View post →
                   </a>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ))}
         </div>
       )}
