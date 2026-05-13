@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
+
 const APIFY_API_KEY = process.env.APIFY_API_KEY;
 
 async function scrapeInstagram(handles: string[]) {
   if (!APIFY_API_KEY) return [];
-  
   const validHandles = handles.filter(h => h && h.trim() !== '');
   if (validHandles.length === 0) return [];
 
@@ -21,13 +21,11 @@ async function scrapeInstagram(handles: string[]) {
         }),
       }
     );
-    
     if (!response.ok) return [];
     const run = await response.json();
     const runId = run.data?.id;
     if (!runId) return [];
 
-    // Poll for completion (max 60 seconds)
     for (let i = 0; i < 12; i++) {
       await new Promise(r => setTimeout(r, 5000));
       const statusRes = await fetch(
@@ -50,7 +48,6 @@ async function scrapeInstagram(handles: string[]) {
 
 async function scrapeLinkedIn(slugs: string[]) {
   if (!APIFY_API_KEY) return [];
-  
   const validSlugs = slugs.filter(s => s && s.trim() !== '');
   if (validSlugs.length === 0) return [];
 
@@ -67,7 +64,6 @@ async function scrapeLinkedIn(slugs: string[]) {
         }),
       }
     );
-
     if (!response.ok) return [];
     const run = await response.json();
     const runId = run.data?.id;
@@ -93,18 +89,18 @@ async function scrapeLinkedIn(slugs: string[]) {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST() {
   if (!APIFY_API_KEY) {
     return NextResponse.json({ error: 'Apify API key not configured' }, { status: 400 });
   }
 
   try {
     const businessUnits = await prisma.businessUnit.findMany();
-    
+
     const instagramHandles = businessUnits
       .map(u => u.instagramHandle)
       .filter((h): h is string => !!h);
-    
+
     const linkedInSlugs = businessUnits
       .map(u => u.linkedinHandle)
       .filter((s): s is string => !!s);
@@ -114,61 +110,62 @@ export async function POST(request: Request) {
       scrapeLinkedIn(linkedInSlugs),
     ]);
 
-    // Save Instagram posts
     let savedCount = 0;
+
     for (const post of igPosts) {
       if (!post.url) continue;
-      const unit = businessUnits.find(u => 
-        post.ownerUsername && u.instagramHandle?.replace('@','') === post.ownerUsername
+      const unit = businessUnits.find(u =>
+        post.ownerUsername && u.instagramHandle?.replace('@', '') === post.ownerUsername
       );
       if (!unit) continue;
-      
-      await prisma.socialPost.upsert({
-        where: { url: post.url },
-        update: {},
-        create: {
+
+      const existing = await prisma.socialPost.findFirst({
+        where: { postUrl: post.url }
+      });
+      if (existing) continue;
+
+      await prisma.socialPost.create({
+        data: {
           businessUnitId: unit.id,
           platform: 'instagram',
-          url: post.url,
-          caption: post.caption?.slice(0, 2000) || '',
+          postUrl: post.url,
+          content: post.caption?.slice(0, 2000) || '',
           imageUrl: post.displayUrl || null,
-          publishedAt: post.timestamp ? new Date(post.timestamp) : new Date(),
-          likes: post.likesCount || 0,
-          comments: post.commentsCount || 0,
+          postedAt: post.timestamp ? new Date(post.timestamp) : new Date(),
         },
       });
       savedCount++;
     }
 
-    // Save LinkedIn posts
     for (const post of liPosts) {
       if (!post.url) continue;
       const slug = post.companyUrl?.split('/company/')?.[1]?.replace('/', '');
       const unit = businessUnits.find(u => u.linkedinHandle === slug);
       if (!unit) continue;
 
-      await prisma.socialPost.upsert({
-        where: { url: post.url },
-        update: {},
-        create: {
+      const existing = await prisma.socialPost.findFirst({
+        where: { postUrl: post.url }
+      });
+      if (existing) continue;
+
+      await prisma.socialPost.create({
+        data: {
           businessUnitId: unit.id,
           platform: 'linkedin',
-          url: post.url,
-          caption: post.text?.slice(0, 2000) || '',
+          postUrl: post.url,
+          content: post.text?.slice(0, 2000) || '',
           imageUrl: post.image || null,
-          publishedAt: post.date ? new Date(post.date) : new Date(),
-          likes: post.likes || 0,
-          comments: post.comments || 0,
+          postedAt: post.date ? new Date(post.date) : new Date(),
         },
       });
       savedCount++;
     }
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       instagramPosts: igPosts.length,
       linkedInPosts: liPosts.length,
-      saved: savedCount 
+      saved: savedCount,
     });
   } catch (error) {
     console.error('Scrape error:', error);
@@ -180,11 +177,12 @@ export async function GET() {
   try {
     const posts = await prisma.socialPost.findMany({
       include: { businessUnit: true },
-      orderBy: { publishedAt: 'desc' },
+      orderBy: { postedAt: 'desc' },
       take: 100,
     });
     return NextResponse.json(posts);
   } catch (error) {
+    console.error(error);
     return NextResponse.json({ error: 'Failed to fetch posts' }, { status: 500 });
   }
 }
