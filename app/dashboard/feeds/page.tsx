@@ -2,28 +2,14 @@
 
 import { useState, useEffect } from 'react';
 
-interface SocialPost {
-  id: string;
-  platform: string;
-  postUrl?: string;
-  content: string;
-  imageUrl?: string;
-  postedAt: string;
-  businessUnit: {
-    name: string;
-  };
-}
-
-export default function SocialFeedsPage() {
-  const [posts, setPosts] = useState<SocialPost[]>([]);
+export default function FeedsPage() {
+  const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [scraping, setScraping] = useState(false);
   const [message, setMessage] = useState('');
-  const [filter, setFilter] = useState<'all' | 'instagram' | 'linkedin'>('all');
+  const [filter, setFilter] = useState('all');
 
-  useEffect(() => {
-    fetchPosts();
-  }, []);
+  useEffect(() => { fetchPosts(); }, []);
 
   async function fetchPosts() {
     setLoading(true);
@@ -31,11 +17,8 @@ export default function SocialFeedsPage() {
       const res = await fetch('/api/scrape-social');
       const data = await res.json();
       setPosts(Array.isArray(data) ? data : []);
-    } catch {
-      setMessage('Failed to load posts.');
-    } finally {
-      setLoading(false);
-    }
+    } catch { setMessage('Failed to load posts.'); }
+    finally { setLoading(false); }
   }
 
   async function triggerScrape() {
@@ -45,114 +28,69 @@ export default function SocialFeedsPage() {
       const res = await fetch('/api/scrape-social', { method: 'POST' });
       const data = await res.json();
       if (data.success) {
-        setMessage(`✅ Done! Found ${data.instagramPosts} Instagram posts and ${data.linkedInPosts} LinkedIn posts. Saved ${data.saved} new posts.`);
-        await fetchPosts();
+        setMessage('Done! Saved ' + data.saved + ' new posts.');
+        fetchPosts();
       } else {
-        setMessage(`❌ Error: ${data.error}`);
+        setMessage('Error: ' + data.error);
       }
-    } catch {
-      setMessage('❌ Scraping failed. Check your Apify API key in Settings.');
-    } finally {
-      setScraping(false);
-    }
+    } catch { setMessage('Scraping failed.'); }
+    finally { setScraping(false); }
   }
 
-  const filtered = posts.filter(p => filter === 'all' || p.platform === filter);
+  const filtered = filter === 'all' ? posts : posts.filter(p => p.platform === filter);
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div style={{ padding: '24px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
-          <h1 className="text-2xl font-bold text-white">Social Feeds</h1>
-          <p className="text-gray-400 mt-1">Latest posts from all ACC business units</p>
+          <h1 style={{ color: 'white', fontSize: '24px', fontWeight: 'bold' }}>Social Feeds</h1>
+          <p style={{ color: '#9ca3af', marginTop: '4px' }}>Latest posts from all ACC business units</p>
         </div>
-        <button
-          onClick={triggerScrape}
-          disabled={scraping}
-          className="px-4 py-2 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
-        >
+        <button onClick={triggerScrape} disabled={scraping}
+          style={{ padding: '8px 16px', backgroundColor: '#d97706', color: 'white', borderRadius: '8px', border: 'none', cursor: 'pointer' }}>
           {scraping ? 'Scraping...' : 'Refresh Social Feeds'}
         </button>
       </div>
 
       {message && (
-        <div className="mb-4 p-3 rounded-lg bg-gray-800 text-gray-200 text-sm">
+        <div style={{ padding: '12px', backgroundColor: '#1f2937', color: '#e5e7eb', borderRadius: '8px', marginBottom: '16px' }}>
           {message}
         </div>
       )}
 
-      <div className="flex gap-2 mb-6">
-        {(['all', 'instagram', 'linkedin'] as const).map(f => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-              filter === f
-                ? 'bg-amber-600 text-white'
-                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-            }`}
-          >
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
+        {['all', 'instagram', 'linkedin'].map(f => (
+          <button key={f} onClick={() => setFilter(f)}
+            style={{ padding: '6px 16px', borderRadius: '999px', border: 'none', cursor: 'pointer', backgroundColor: filter === f ? '#d97706' : '#1f2937', color: filter === f ? 'white' : '#9ca3af' }}>
             {f.charAt(0).toUpperCase() + f.slice(1)}
           </button>
         ))}
       </div>
 
       {loading ? (
-        <div className="text-center text-gray-400 py-20">Loading posts...</div>
+        <p style={{ color: '#9ca3af', textAlign: 'center', padding: '80px 0' }}>Loading posts...</p>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-20">
-          <p className="text-gray-400 text-lg mb-2">No posts yet</p>
-          <p className="text-gray-500 text-sm mb-6">
-            Click "Refresh Social Feeds" to pull the latest posts from all ACC units.
-          </p>
-          <button
-            onClick={triggerScrape}
-            disabled={scraping}
-            className="px-4 py-2 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
-          >
+        <div style={{ textAlign: 'center', padding: '80px 0' }}>
+          <p style={{ color: '#9ca3af', marginBottom: '8px' }}>No posts yet</p>
+          <p style={{ color: '#6b7280', marginBottom: '24px' }}>Click Refresh Social Feeds to pull the latest posts.</p>
+          <button onClick={triggerScrape} disabled={scraping}
+            style={{ padding: '8px 16px', backgroundColor: '#d97706', color: 'white', borderRadius: '8px', border: 'none', cursor: 'pointer' }}>
             {scraping ? 'Scraping...' : 'Pull Social Feeds Now'}
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
           {filtered.map(post => (
-            <div key={post.id} className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-              {post.imageUrl && (
-                <div className="aspect-video w-full overflow-hidden">
-                  <img src={post.imageUrl} alt="" className="w-full h-full object-cover" />
+            <div key={post.id} style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '12px', overflow: 'hidden' }}>
+              {post.imageUrl && <img src={post.imageUrl} alt="" style={{ width: '100%', height: '160px', objectFit: 'cover' }} />}
+              <div style={{ padding: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <span style={{ color: 'white', fontSize: '14px', fontWeight: '600' }}>{post.businessUnit.name}</span>
+                  <span style={{ fontSize: '12px', padding: '2px 8px', borderRadius: '999px', backgroundColor: post.platform === 'instagram' ? '#500724' : '#1e3a5f', color: post.platform === 'instagram' ? '#f9a8d4' : '#93c5fd' }}>{post.platform}</span>
                 </div>
-              )}
-              <div className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-semibold text-white">{post.businessUnit.name}</span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                    post.platform === 'instagram'
-                      ? 'bg-pink-900/50 text-pink-300'
-                      : 'bg-blue-900/50 text-blue-300'
-                  }`}>
-                    {post.platform}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500 mb-2">
-                  {new Date(post.postedAt).toLocaleDateString('en-US', {
-                    month: 'short', day: 'numeric', year: 'numeric'
-                  })}
-                </p>
-                <p className="text-gray-300 text-sm line-clamp-4 mb-3">
-                  {post.content || 'No caption'}
-                </p>
-                <div className="flex items-center justify-end text-xs">
-                  {post.postUrl && (
-                    
-                      href={post.postUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-amber-500 hover:text-amber-400"
-                    >
-                      View post →
-                    </a>
-                  )}
-                </div>
+                <p style={{ color: '#6b7280', fontSize: '12px', marginBottom: '8px' }}>{new Date(post.postedAt).toLocaleDateString()}</p>
+                <p style={{ color: '#d1d5db', fontSize: '14px', marginBottom: '12px' }}>{(post.content || '').slice(0, 200)}</p>
+                {post.postUrl && <a href={post.postUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#f59e0b', fontSize: '12px' }}>View post →</a>}
               </div>
             </div>
           ))}
