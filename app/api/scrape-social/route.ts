@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-
+import { prisma } from '@/lib/db/prisma';
 const APIFY_API_KEY = process.env.APIFY_API_KEY;
 
 async function scrapeInstagram(handles: string[]) {
