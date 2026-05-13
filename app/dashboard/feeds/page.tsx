@@ -5,12 +5,10 @@ import { useState, useEffect } from 'react';
 interface SocialPost {
   id: string;
   platform: string;
-  url: string;
-  caption: string;
+  postUrl?: string;
+  content: string;
   imageUrl?: string;
-  publishedAt: string;
-  likes: number;
-  comments: number;
+  postedAt: string;
   businessUnit: {
     name: string;
   };
@@ -121,11 +119,7 @@ export default function SocialFeedsPage() {
             <div key={post.id} className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
               {post.imageUrl && (
                 <div className="aspect-video w-full overflow-hidden">
-                  <img
-                    src={post.imageUrl}
-                    alt=""
-                    className="w-full h-full object-cover"
-                  />
+                  <img src={post.imageUrl} alt="" className="w-full h-full object-cover" />
                 </div>
               )}
               <div className="p-4">
@@ -140,23 +134,24 @@ export default function SocialFeedsPage() {
                   </span>
                 </div>
                 <p className="text-xs text-gray-500 mb-2">
-                  {new Date(post.publishedAt).toLocaleDateString('en-US', {
+                  {new Date(post.postedAt).toLocaleDateString('en-US', {
                     month: 'short', day: 'numeric', year: 'numeric'
                   })}
                 </p>
                 <p className="text-gray-300 text-sm line-clamp-4 mb-3">
-                  {post.caption || 'No caption'}
+                  {post.content || 'No caption'}
                 </p>
-                <div className="flex items-center justify-between text-xs text-gray-500">
-                  <span>❤️ {post.likes.toLocaleString()} &nbsp; 💬 {post.comments.toLocaleString()}</span>
-                  <a
-                    href={post.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-amber-500 hover:text-amber-400"
-                  >
-                    View post →
-                  </a>
+                <div className="flex items-center justify-end text-xs">
+                  {post.postUrl && (
+                    
+                      href={post.postUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-amber-500 hover:text-amber-400"
+                    >
+                      View post →
+                    </a>
+                  )}
                 </div>
               </div>
             </div>
