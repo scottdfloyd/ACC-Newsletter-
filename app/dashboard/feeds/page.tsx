@@ -1,102 +1,174 @@
-"use client";
-import { useState, useEffect } from "react";
-import { Header } from "@/components/dashboard/Header";
-import { FeedCard } from "@/components/dashboard/FeedCard";
-import type { SocialPost } from "@/lib/social/mock-feeds";
+'use client';
 
-const PLATFORMS = ["all", "linkedin", "instagram"] as const;
-const BUSINESS_UNITS = [
-  "all",
-  "HangarFour",
-  "Pink Sparrow",
-  "Advisory",
-  "Speakeasy",
-  "Cavalry",
-  "AMP Agency",
-];
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
-export default function FeedsPage() {
+interface SocialPost {
+  id: string;
+  platform: string;
+  url: string;
+  caption: string;
+  imageUrl?: string;
+  publishedAt: string;
+  likes: number;
+  comments: number;
+  businessUnit: {
+    name: string;
+  };
+}
+
+export default function SocialFeedsPage() {
   const [posts, setPosts] = useState<SocialPost[]>([]);
-  const [platform, setPlatform] = useState<(typeof PLATFORMS)[number]>("all");
-  const [unit, setUnit] = useState("all");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [scraping, setScraping] = useState(false);
+  const [message, setMessage] = useState('');
+  const [filter, setFilter] = useState<'all' | 'instagram' | 'linkedin'>('all');
 
   useEffect(() => {
-    fetch("/api/feeds")
-      .then((r) => r.json())
-      .then((data) => {
-        setPosts(data);
-        setLoading(false);
-      });
+    fetchPosts();
   }, []);
 
-  const filtered = posts.filter((p) => {
-    const matchPlatform = platform === "all" || p.platform === platform;
-    const matchUnit = unit === "all" || p.businessUnit === unit;
-    return matchPlatform && matchUnit;
-  });
+  async function fetchPosts() {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/scrape-social');
+      const data = await res.json();
+      setPosts(Array.isArray(data) ? data : []);
+    } catch {
+      setMessage('Failed to load posts.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function triggerScrape() {
+    setScraping(true);
+    setMessage('Scraping social feeds... this may take up to 2 minutes.');
+    try {
+      const res = await fetch('/api/scrape-social', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        setMessage(`✅ Done! Found ${data.instagramPosts} Instagram posts and ${data.linkedInPosts} LinkedIn posts. Saved ${data.saved} new posts.`);
+        await fetchPosts();
+      } else {
+        setMessage(`❌ Error: ${data.error}`);
+      }
+    } catch {
+      setMessage('❌ Scraping failed. Check your Apify API key in Settings.');
+    } finally {
+      setScraping(false);
+    }
+  }
+
+  const filtered = posts.filter(p => filter === 'all' || p.platform === filter);
 
   return (
-    <div>
-      <Header
-        title="Social Feeds"
-        subtitle="Posts from ACC business units — the raw material for your newsletter."
-      />
-
-      {/* Mock data notice */}
-      <div className="bg-[#E8C547]/5 border border-[#E8C547]/20 rounded-lg px-4 py-3 mb-6 flex items-start gap-3">
-        <span className="text-[#E8C547] text-sm">⚡</span>
-        <p className="text-zinc-400 text-xs leading-relaxed">
-          <span className="text-[#E8C547] font-medium">Mock data active.</span>{" "}
-          Add your business unit LinkedIn and Instagram handles in{" "}
-          <span className="text-zinc-300">Settings</span> to connect live social feeds via Apify.
-        </p>
-      </div>
-
-      {/* Filters */}
-      <div className="flex items-center gap-3 mb-6 flex-wrap">
-        <div className="flex bg-zinc-900 border border-zinc-800 rounded-md p-0.5">
-          {PLATFORMS.map((p) => (
-            <button
-              key={p}
-              onClick={() => setPlatform(p)}
-              className={`px-3 py-1.5 rounded text-xs font-medium transition-all capitalize ${
-                platform === p
-                  ? "bg-[#E8C547] text-zinc-900"
-                  : "text-zinc-400 hover:text-white"
-              }`}
-            >
-              {p}
-            </button>
-          ))}
+    <div className="p-6 max-w-6xl mx-auto">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Social Feeds</h1>
+          <p className="text-gray-400 mt-1">Latest posts from all ACC business units</p>
         </div>
-        <select
-          value={unit}
-          onChange={(e) => setUnit(e.target.value)}
-          className="bg-zinc-900 border border-zinc-800 text-zinc-300 rounded-md px-3 py-1.5 text-xs focus:outline-none focus:border-[#E8C547]"
+        <Button
+          onClick={triggerScrape}
+          disabled={scraping}
+          className="bg-amber-600 hover:bg-amber-700 text-white"
         >
-          {BUSINESS_UNITS.map((u) => (
-            <option key={u} value={u}>
-              {u === "all" ? "All Business Units" : u}
-            </option>
-          ))}
-        </select>
-        <span className="text-zinc-600 text-xs">{filtered.length} posts</span>
+          {scraping ? 'Scraping...' : 'Refresh Social Feeds'}
+        </Button>
       </div>
 
-      {/* Grid */}
-      {loading ? (
-        <div className="grid grid-cols-2 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="bg-zinc-900 border border-zinc-800 rounded-lg h-40 animate-pulse" />
-          ))}
+      {message && (
+        <div className="mb-4 p-3 rounded bg-gray-800 text-gray-200 text-sm">
+          {message}
         </div>
+      )}
+
+      <div className="flex gap-2 mb-6">
+        {(['all', 'instagram', 'linkedin'] as const).map(f => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+              filter === f
+                ? 'bg-amber-600 text-white'
+                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+            }`}
+          >
+            {f.charAt(0).toUpperCase() + f.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <div className="text-center text-gray-400 py-20">Loading posts...</div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-20 text-zinc-600">No posts found for this filter.</div>
+        <div className="text-center py-20">
+          <p className="text-gray-400 text-lg mb-2">No posts yet</p>
+          <p className="text-gray-500 text-sm mb-6">
+            Click "Refresh Social Feeds" to pull the latest posts from all ACC units.
+          </p>
+          <Button
+            onClick={triggerScrape}
+            disabled={scraping}
+            className="bg-amber-600 hover:bg-amber-700 text-white"
+          >
+            {scraping ? 'Scraping...' : 'Pull Social Feeds Now'}
+          </Button>
+        </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4">
-          {filtered.map((post) => (
-            <FeedCard key={post.id} post={post} />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.map(post => (
+            <Card key={post.id} className="bg-gray-900 border-gray-800">
+              {post.imageUrl && (
+                <div className="aspect-video w-full overflow-hidden rounded-t-lg">
+                  <img
+                    src={post.imageUrl}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-semibold text-white">
+                    {post.businessUnit.name}
+                  </CardTitle>
+                  <Badge
+                    className={
+                      post.platform === 'instagram'
+                        ? 'bg-pink-900 text-pink-300'
+                        : 'bg-blue-900 text-blue-300'
+                    }
+                  >
+                    {post.platform}
+                  </Badge>
+                </div>
+                <p className="text-xs text-gray-500">
+                  {new Date(post.publishedAt).toLocaleDateString('en-US', {
+                    month: 'short', day: 'numeric', year: 'numeric'
+                  })}
+                </p>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-300 text-sm line-clamp-4 mb-3">
+                  {post.caption || 'No caption'}
+                </p>
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                  <span>❤️ {post.likes.toLocaleString()} &nbsp; 💬 {post.comments.toLocaleString()}</span>
+                  <a
+                    href={post.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-amber-500 hover:text-amber-400"
+                  >
+                    View post →
+                  </a>
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}
