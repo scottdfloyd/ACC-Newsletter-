@@ -11,8 +11,14 @@ export async function POST() {
   }
   try {
     const businessUnits = await prisma.businessUnit.findMany();
-    const igHandles = businessUnits.map(u => u.instagramHandle).filter((h): h is string => !!h && h.trim() !== '');
-    const liSlugs = businessUnits.map(u => u.linkedinHandle).filter((s): s is string => !!s && s.trim() !== '');
+    const igHandles = businessUnits
+      .map(u => u.instagramHandle)
+      .filter((h): h is string => !!h && h.trim() !== '')
+      .map(h => h.replace('@', ''));
+
+    const liSlugs = businessUnits
+      .map(u => u.linkedinHandle)
+      .filter((s): s is string => !!s && s.trim() !== '');
 
     let igRunId = null;
     if (igHandles.length > 0) {
@@ -20,7 +26,7 @@ export async function POST() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          directUrls: igHandles.map(h => `https://www.instagram.com/${h.replace('@', '')}/`),
+          directUrls: igHandles.map(h => `https://www.instagram.com/${h}/`),
           resultsLimit: 10,
           onlyPostsNewerThan: '2026-01-01',
         }),
@@ -44,7 +50,12 @@ export async function POST() {
       liRunId = liData.data?.id || null;
     }
 
-    return NextResponse.json({ success: true, message: 'Scrape started! Click "Fetch Results" in about 2 minutes.', igRunId, liRunId });
+    return NextResponse.json({
+      success: true,
+      message: 'Scrape started! Click Fetch Results in about 2 minutes.',
+      igRunId,
+      liRunId,
+    });
   } catch (error) {
     console.error('Scrape trigger error:', error);
     return NextResponse.json({ error: 'Failed to trigger scrape' }, { status: 500 });
@@ -88,19 +99,28 @@ export async function GET(request: Request) {
       if (igStatus === 'SUCCEEDED') {
         const dataRes = await fetch(`https://api.apify.com/v2/acts/${IG_ACTOR}/runs/${igRunId}/dataset/items?token=${APIFY_API_KEY}`);
         const items = await dataRes.json();
+
         for (const post of (Array.isArray(items) ? items : [])) {
-          if (!post.url && !post.shortCode) continue;
-          const postUrl = post.url || `https://www.instagram.com/p/${post.shortCode}/`;
-          const unit = businessUnits.find(u => post.ownerUsername && u.instagramHandle?.replace('@', '') === post.ownerUsername);
+          const postUrl = post.url || (post.shortCode ? `https://www.instagram.com/p/${post.shortCode}/` : null);
+          if (!postUrl) continue;
+
+          // Match with or without @ symbol
+          const ownerUsername = (post.ownerUsername || '').toLowerCase().replace('@', '');
+          const unit = businessUnits.find(u => {
+            const handle = (u.instagramHandle || '').toLowerCase().replace('@', '');
+            return handle === ownerUsername;
+          });
           if (!unit) continue;
+
           const existing = await prisma.socialPost.findFirst({ where: { postUrl } });
           if (existing) continue;
+
           await prisma.socialPost.create({
             data: {
               businessUnitId: unit.id,
               platform: 'instagram',
               postUrl,
-              content: post.caption?.slice(0, 2000) || '',
+              content: (post.caption || '').slice(0, 2000),
               imageUrl: post.displayUrl || post.thumbnailUrl || null,
               postedAt: post.timestamp ? new Date(post.timestamp) : new Date(),
             },
@@ -118,19 +138,26 @@ export async function GET(request: Request) {
       if (liStatus === 'SUCCEEDED') {
         const dataRes = await fetch(`https://api.apify.com/v2/acts/${LI_ACTOR}/runs/${liRunId}/dataset/items?token=${APIFY_API_KEY}`);
         const items = await dataRes.json();
+
         for (const post of (Array.isArray(items) ? items : [])) {
           if (!post.url) continue;
-          const slug = post.companyUrl?.split('/company/')?.[1]?.replace('/', '');
-          const unit = businessUnits.find(u => u.linkedinHandle === slug);
+          const rawSlug = (post.companyUrl || '').split('/company/')[1]?.replace('/', '') || '';
+          const slug = rawSlug.toLowerCase();
+          const unit = businessUnits.find(u => {
+            const handle = (u.linkedinHandle || '').toLowerCase().replace('@', '');
+            return handle === slug;
+          });
           if (!unit) continue;
+
           const existing = await prisma.socialPost.findFirst({ where: { postUrl: post.url } });
           if (existing) continue;
+
           await prisma.socialPost.create({
             data: {
               businessUnitId: unit.id,
               platform: 'linkedin',
               postUrl: post.url,
-              content: post.text?.slice(0, 2000) || '',
+              content: (post.text || '').slice(0, 2000),
               imageUrl: post.image || null,
               postedAt: post.date ? new Date(post.date) : new Date(),
             },
@@ -141,8 +168,15 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json({
-      success: true, igStatus, liStatus, saved: savedCount,
-      message: savedCount > 0 ? `Saved ${savedCount} new posts!` : igStatus === 'RUNNING' || liStatus === 'RUNNING' ? 'Still running — try again in 30 seconds.' : 'Runs complete but no new posts found.',
+      success: true,
+      igStatus,
+      liStatus,
+      saved: savedCount,
+      message: savedCount > 0
+        ? `Saved ${savedCount} new posts!`
+        : igStatus === 'RUNNING' || liStatus === 'RUNNING'
+        ? 'Still running — try again in 30 seconds.'
+        : 'Runs complete. Check that your social handles in Settings match your Instagram usernames exactly.',
     });
   } catch (error) {
     console.error('Fetch results error:', error);
