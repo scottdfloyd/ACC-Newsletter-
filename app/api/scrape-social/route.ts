@@ -14,7 +14,7 @@ export async function POST() {
     const igHandles = businessUnits
       .map(u => u.instagramHandle)
       .filter((h): h is string => !!h && h.trim() !== '')
-      .map(h => h.replace('@', ''));
+      .map(h => h.replace('@', '').toLowerCase());
 
     const liSlugs = businessUnits
       .map(u => u.linkedinHandle)
@@ -88,8 +88,10 @@ export async function GET(request: Request) {
   try {
     const businessUnits = await prisma.businessUnit.findMany();
     let savedCount = 0;
+    let skippedCount = 0;
     let igStatus = 'skipped';
     let liStatus = 'skipped';
+    const debugLog: string[] = [];
 
     if (igRunId) {
       const statusRes = await fetch(`https://api.apify.com/v2/acts/${IG_ACTOR}/runs/${igRunId}?token=${APIFY_API_KEY}`);
@@ -99,21 +101,29 @@ export async function GET(request: Request) {
       if (igStatus === 'SUCCEEDED') {
         const dataRes = await fetch(`https://api.apify.com/v2/acts/${IG_ACTOR}/runs/${igRunId}/dataset/items?token=${APIFY_API_KEY}`);
         const items = await dataRes.json();
+        const posts = Array.isArray(items) ? items : [];
+        debugLog.push(`Instagram: ${posts.length} posts returned`);
 
-        for (const post of (Array.isArray(items) ? items : [])) {
+        for (const post of posts) {
           const postUrl = post.url || (post.shortCode ? `https://www.instagram.com/p/${post.shortCode}/` : null);
-          if (!postUrl) continue;
+          if (!postUrl) { skippedCount++; continue; }
 
-          // Match with or without @ symbol
           const ownerUsername = (post.ownerUsername || '').toLowerCase().replace('@', '');
+          debugLog.push(`Trying to match: "${ownerUsername}"`);
+
           const unit = businessUnits.find(u => {
-            const handle = (u.instagramHandle || '').toLowerCase().replace('@', '');
+            const handle = (u.instagramHandle || '').toLowerCase().replace('@', '').trim();
             return handle === ownerUsername;
           });
-          if (!unit) continue;
+
+          if (!unit) {
+            debugLog.push(`No match for: "${ownerUsername}" — available: ${businessUnits.map(u => u.instagramHandle).join(', ')}`);
+            skippedCount++;
+            continue;
+          }
 
           const existing = await prisma.socialPost.findFirst({ where: { postUrl } });
-          if (existing) continue;
+          if (existing) { skippedCount++; continue; }
 
           await prisma.socialPost.create({
             data: {
@@ -126,6 +136,7 @@ export async function GET(request: Request) {
             },
           });
           savedCount++;
+          debugLog.push(`Saved post for ${unit.name}`);
         }
       }
     }
@@ -143,14 +154,13 @@ export async function GET(request: Request) {
           if (!post.url) continue;
           const rawSlug = (post.companyUrl || '').split('/company/')[1]?.replace('/', '') || '';
           const slug = rawSlug.toLowerCase();
-          const unit = businessUnits.find(u => {
-            const handle = (u.linkedinHandle || '').toLowerCase().replace('@', '');
-            return handle === slug;
-          });
-          if (!unit) continue;
+          const unit = businessUnits.find(u =>
+            (u.linkedinHandle || '').toLowerCase().replace('@', '').trim() === slug
+          );
+          if (!unit) { skippedCount++; continue; }
 
           const existing = await prisma.socialPost.findFirst({ where: { postUrl: post.url } });
-          if (existing) continue;
+          if (existing) { skippedCount++; continue; }
 
           await prisma.socialPost.create({
             data: {
@@ -172,11 +182,13 @@ export async function GET(request: Request) {
       igStatus,
       liStatus,
       saved: savedCount,
+      skipped: skippedCount,
+      debug: debugLog,
       message: savedCount > 0
         ? `Saved ${savedCount} new posts!`
         : igStatus === 'RUNNING' || liStatus === 'RUNNING'
         ? 'Still running — try again in 30 seconds.'
-        : 'Runs complete. Check that your social handles in Settings match your Instagram usernames exactly.',
+        : `No new posts saved. Skipped: ${skippedCount}. Check debug for details.`,
     });
   } catch (error) {
     console.error('Fetch results error:', error);
